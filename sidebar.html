@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 16px;
+      }
+      .button {
+        background-color: #4285f4;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-bottom: 12px;
+        width: 100%;
+        font-size: 14px;
+      }
+      .button:hover {
+        background-color: #357abd;
+      }
+      #status {
+        color: #666;
+        margin: 10px 0;
+        font-size: 0.9em;
+        line-height: 1.4;
+      }
+      .steps {
+        margin-top: 20px;
+        font-size: 13px;
+        color: #444;
+      }
+      .steps ol {
+        padding-left: 20px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="button" onclick="copyAndOpen()">Open Sapling.ai & Paste Text</button>
+    <div id="status"></div>
+    <div class="steps">
+      <strong>Instructions:</strong>
+      <ol>
+        <li>Click the button above</li>
+        <li>When Sapling.ai opens, click inside the text box</li>
+        <li>Press Ctrl+V (or Cmd+V) to paste the text</li>
+      </ol>
+    </div>
+    
+    <script>
+      async function copyAndOpen() {
+        setStatus('Getting document text...');
+        
+        google.script.run
+          .withSuccessHandler(async function(text) {
+            try {
+              // Use modern clipboard API
+              await navigator.clipboard.writeText(text);
+              setStatus('✅ Text copied to clipboard!');
+              
+              // Open Sapling.ai in a new window with specific features
+              const saplingWindow = window.open('https://sapling.ai/ai-content-detector', '_blank', 'width=1000,height=800');
+              
+              if (saplingWindow) {
+                setStatus('✅ Text copied!<br>Sapling.ai opened - click the text box and press Ctrl+V/Cmd+V');
+                
+                // Try to focus the new window
+                saplingWindow.focus();
+                
+                // Add event listener for when window gains focus
+                window.addEventListener('blur', function() {
+                  setTimeout(function() {
+                    // Attempt to simulate paste after a short delay
+                    try {
+                      saplingWindow.focus();
+                      saplingWindow.document.execCommand('paste');
+                    } catch(e) {
+                      // Silent catch - this is expected due to security restrictions
+                    }
+                  }, 1000);
+                }, { once: true });
+              }
+            } catch(e) {
+              setStatus('❌ Could not copy text. Please try again.');
+              console.error(e);
+            }
+          })
+          .withFailureHandler(function(error) {
+            setStatus('❌ Error: ' + error);
+          })
+          .getDocumentText();
+      }
+      
+      function setStatus(message) {
+        document.getElementById('status').innerHTML = message;
+      }
+    </script>
+  </body>
+</html> 
